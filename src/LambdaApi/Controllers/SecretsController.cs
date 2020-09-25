@@ -1,6 +1,8 @@
-using System.Collections.Generic;
+using System;
 using System.Threading.Tasks;
 using LambdaApi.Models.Request;
+using LambdaApi.Services;
+using LambdaApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LambdaApi.Controllers
@@ -8,12 +10,13 @@ namespace LambdaApi.Controllers
     [Route("api/[controller]")]
     public class SecretsController : ControllerBase
     {
-        [HttpGet]
-        public IEnumerable<string> Get()
+        private readonly ICadastroSecretsManagerService _cadastroSecrestManagerService;
+
+        public SecretsController()
         {
-            return new string[] { "value1", "value2" };
+            _cadastroSecrestManagerService = new CadastroSecretsManagerService();
         }
-        
+
         [HttpPost]
         [Route("cadastrar")]
         public async Task<IActionResult> CadastrarSecrets([FromBody] CadastrarSecretRequest request)
@@ -21,13 +24,16 @@ namespace LambdaApi.Controllers
             if (request == null)
                 return BadRequest("Solicitação inválida");
 
-            return Ok(await Task.Run(() =>
+            try
             {
-                return new { 
-                    Flow = request.Flow,
-                    Secrets = request.SecretsManager
-                };
-            }));
+                await _cadastroSecrestManagerService.Execute(request);
+
+                return Ok("Operação realizada com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Problema ao realizar operação | {ex.Message}");
+            }
         }
     }
 }
